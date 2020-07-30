@@ -23,7 +23,10 @@ void str_cli(FILE *fp, int sockfd) {
 		FD_SET(sockfd, &rset);
 		
 		int maxfd = max(fileno(fp), sockfd) + 1;
-		select(maxfd, &rset, nullptr, nullptr, nullptr);
+		if (select(maxfd, &rset, nullptr, nullptr, nullptr) < 0) {
+			cerr << "select error" << endl;
+			exit(1);
+		}
 
 		if (FD_ISSET(sockfd, &rset)) {
 			int n = read(sockfd, buf, MAXLINE);
@@ -58,6 +61,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+		cerr << "socket error" << endl;
+		exit(1);
+	}
 
 	sockaddr_in servaddr;
 	memset(&servaddr, 0, sizeof(servaddr));
@@ -65,7 +72,10 @@ int main(int argc, char *argv[]) {
 	servaddr.sin_port = htons(8888);
 	inet_pton(AF_INET, argv[1], &servaddr.sin_addr);
 
-	connect(sockfd, reinterpret_cast<sockaddr*>(&servaddr), sizeof(servaddr));
+	if (0 != connect(sockfd, reinterpret_cast<sockaddr*>(&servaddr), sizeof(servaddr))) {
+		cerr << "connect error" << endl;
+		exit(1);
+	}
 
 	str_cli(stdin, sockfd);
 
